@@ -7,7 +7,7 @@
     @start='drag = true'
     @end='drag = false'
     @change='setNewCardOrder'
-   > 
+   >
     <card-item
       v-for="card in cardsData"
       :cardData="card"
@@ -15,11 +15,11 @@
       v-show='card.visible'
     >
     </card-item>
-   </draggable> 
+   </draggable>
   </div>
   <div class='drawer'>
     <a-button type="primary" @click="toggleDrawer">
-      <a-icon type="setting" theme="outlined"/> 
+      <a-icon type="setting" theme="outlined"/>
     </a-button>
     <a-drawer
       title="List of interfaces cards"
@@ -31,33 +31,33 @@
       <div v-for='card in cardsData' :key='card.title'>
         <a-checkbox v-model='card.visible' @change='removeCard'>
           {{ card.title }}
-        </a-checkbox>  
+        </a-checkbox>
       </div>
     </a-drawer>
   </div>
 </div>
 </template>
 <script>
-import CardItem from './components/Card.vue';
-import draggable from 'vuedraggable';
+import CardItem from './components/Card.vue'
+import draggable from 'vuedraggable'
 
 export default {
   components: {
     CardItem,
-    draggable,
+    draggable
   },
 
-  data() {
+  data () {
     return {
       cardsData: [],
       configData: [],
       cpuPercentage: 100,
       lastCPUTime: null,
-      visibleDrawer: false,
+      visibleDrawer: false
     }
   },
 
-  async created() {
+  async created () {
     this.cardsData.push(await this.getSystemData())
     this.cardsData.push(await this.getNetworkEvents())
     this.cardsData.push(await this.getSystemEvents())
@@ -67,81 +67,81 @@ export default {
   },
 
   timers: {
-    updateCardsData: {time: 5000, autostart: true, immediate: true, repeat: true},
+    updateCardsData: { time: 5000, autostart: true, immediate: true, repeat: true }
   },
   methods: {
 
-    updateCards(oldCards, newCards) {
+    updateCards (oldCards, newCards) {
       return oldCards.map(oldcard => {
         const newData = newCards.find(newcard => newcard.title === oldcard.title)
-        if(newData && JSON.stringify(newData) !== JSON.stringify(oldcard)) {
-          return {...oldcard, ...newData}
+        if (newData && JSON.stringify(newData) !== JSON.stringify(oldcard)) {
+          return { ...oldcard, ...newData }
         } else {
           return oldcard
         }
       })
     },
 
-    async updateCardsData() {
+    async updateCardsData () {
       const newDatas = []
       newDatas.push(await this.getSystemData())
       this.cardsData = this.updateCards(this.cardsData, newDatas)
       this.loadConfigData()
     },
 
-    async getSystemData() {
+    async getSystemData () {
       const system = await this.$system.getInfo().then((r) => {
-        return r;
-      });
-
-      const disk = await this.$system.getDiskInfo().then((r) => {
-        return r;
+        return r
       })
 
-      const d = new Date(system.localtime *1000)
+      const disk = await this.$system.getDiskInfo().then((r) => {
+        return r
+      })
+
+      const d = new Date(system.localtime * 1000)
       const localTime = d.toLocaleString('lt-LT')
 
       const memPercentage = Math.floor(((system.memory.total - system.memory.free) / system.memory.total) * 100)
       const storagePercentage = Math.floor((disk.root.used / disk.root.total) * 100)
 
       const cardDataSystem = {
-          title: 'System',
-          header: {
-            name: 'CPU load',
-            data: this.cpuPercentage,
+        title: 'System',
+        header: {
+          name: 'CPU load',
+          data: this.cpuPercentage,
+          datatype: 'progress-bar'
+        },
+        sections: [
+          {
+            name: 'Uptime',
+            data: '%t'.format(system.uptime)
+          },
+          {
+            name: 'Local Device Time',
+            data: localTime
+          },
+          {
+            name: 'Firmware version',
+            data: system.release.version
+          },
+          {
+            name: 'Ram',
+            data: memPercentage,
             datatype: 'progress-bar'
           },
-          sections: [
-            {
-              name: 'Uptime',
-              data: '%t'.format(system.uptime),
-            },
-            {
-              name: 'Local Device Time',
-              data: localTime,
-            },
-            { 
-              name: 'Firmware version',
-              data: system.release.version,
-            },
-            {
-              name: 'Ram',
-              data: memPercentage,
-              datatype: 'progress-bar'
-            },
-            {
-              name: 'Flash',
-              data: storagePercentage,
-              datatype: 'progress-bar'
-            }
-          ],
-          visible: true,
-          order: ''
-        }
-        return cardDataSystem
+          {
+            name: 'Flash',
+            data: storagePercentage,
+            datatype: 'progress-bar'
+          }
+        ],
+        visible: true,
+        order: ''
+      }
+      return cardDataSystem
     },
 
-   async updateCpuUsage () {
+    async updateCpuUsage () {
       await this.$rpc.call('system', 'cpu_time').then(times => {
         if (!this.lastCPUTime) {
           this.cpuPercentage = 0
@@ -168,7 +168,7 @@ export default {
       })
     },
 
-    async getInterfacesData() {
+    async getInterfacesData () {
       const interf = await this.$network.load().then(() => {
         const interfaces = this.$network.getInterfaces()
         return interfaces
@@ -176,10 +176,8 @@ export default {
 
       const interfaceCards = []
 
-      for(let i = 0; i < interf.length; i++) {
-
-        if(interf[i].name && interf[i].getIPv4Addrs().length !== 0) {
-          
+      for (let i = 0; i < interf.length; i++) {
+        if (interf[i].name && interf[i].getIPv4Addrs().length !== 0) {
           const cardDataNetwork = {
             header: {},
             title: interf[i].name,
@@ -196,8 +194,7 @@ export default {
             visible: true,
             order: ''
           }
-        interfaceCards.push(cardDataNetwork)
-        
+          interfaceCards.push(cardDataNetwork)
         } else if (interf[i].name && interf[i].getIPv4Addrs().length === 0) {
           const cardDataNetwork = {
             header: {},
@@ -215,22 +212,22 @@ export default {
             visible: true,
             order: ''
           }
-        interfaceCards.push(cardDataNetwork)  
+          interfaceCards.push(cardDataNetwork)
         }
       }
       return interfaceCards
     },
 
-    async getNetworkEvents() {
-      const events = await this.$log.get({table: 'NETWORK', limit: 4}).then((r) => {
+    async getNetworkEvents () {
+      const events = await this.$log.get({ table: 'NETWORK', limit: 4 }).then((r) => {
         return r
       })
 
       const section = events.log.map(element => {
         return {
-          name: new Date(element.TIME *1000).toLocaleString('lt-LT'),
+          name: new Date(element.TIME * 1000).toLocaleString('lt-LT'),
           data: element.TEXT
-        }  
+        }
       })
 
       const cardDataNetworkEvents = {
@@ -243,16 +240,16 @@ export default {
       return cardDataNetworkEvents
     },
 
-    async getSystemEvents() {
-      const events = await this.$log.get({table: 'SYSTEM', limit: 4}).then((r) => {
+    async getSystemEvents () {
+      const events = await this.$log.get({ table: 'SYSTEM', limit: 4 }).then((r) => {
         return r
       })
 
       const section = events.log.map(element => {
         return {
-          name: new Date(element.TIME *1000).toLocaleString('lt-LT'),
-          data: JSON.stringify(element.TEXT),
-        }  
+          name: new Date(element.TIME * 1000).toLocaleString('lt-LT'),
+          data: JSON.stringify(element.TEXT)
+        }
       })
 
       const cardDataSystemEvents = {
@@ -262,33 +259,31 @@ export default {
         visible: true,
         order: ''
       }
-        return cardDataSystemEvents 
+      return cardDataSystemEvents
     },
 
-    async loadConfigData() {
+    async loadConfigData () {
       await this.$uci.load('card_task').then(() => {
-          this.configData = this.$uci.sections('card_task', 'interface')
-          
-          this.configData.forEach(config => {
-            this.cardsData.forEach(card => {
-              card.title === config.name ? card.visible = JSON.parse(config.visible) : null
-              card.title === config.name ? card.order = JSON.parse(config.order) : null
-            })
+        this.configData = this.$uci.sections('card_task', 'interface')
+        this.configData.forEach(config => {
+          this.cardsData.forEach(card => {
+            card.title === config.name ? card.visible = JSON.parse(config.visible) : null
+            card.title === config.name ? card.order = JSON.parse(config.order) : null
           })
+        })
       })
 
       this.cardsData = this.cardsData.sort((or1, or2) => (or1.order > or2.order) ? 1 : (or1.order < or2.order) ? -1 : 0)
-    },  
+    },
 
-   removeCard() {
+    removeCard () {
       this.configData.forEach(config => {
         this.cardsData.forEach(card => {
           if (card.title === config.name) {
-            if(card.visible === true && config.visible === 'false') {
+            if (card.visible === true && config.visible === 'false') {
               this.$uci.set('card_task', config['.name'], 'visible', 'true')
-            
-            } else if(card.visible === false && config.visible === 'true') {
-            this.$uci.set('card_task', config['.name'], 'visible', 'false')
+            } else if (card.visible === false && config.visible === 'true') {
+              this.$uci.set('card_task', config['.name'], 'visible', 'false')
             }
           }
         })
@@ -301,10 +296,10 @@ export default {
       })
     },
 
-    setNewCardOrder() {
-      for(let i = 0; i < this.configData.length; i++) {
-        for(let j = 0; j < this.cardsData.length; j++) {
-          if(this.cardsData[j].title === this.configData[i].name && this.configData[i].order !== j.toString()) {
+    setNewCardOrder () {
+      for (let i = 0; i < this.configData.length; i++) {
+        for (let j = 0; j < this.cardsData.length; j++) {
+          if (this.cardsData[j].title === this.configData[i].name && this.configData[i].order !== j.toString()) {
             this.$uci.set('card_task', this.configData[i]['.name'], 'order', j.toString())
           }
         }
@@ -316,11 +311,10 @@ export default {
       })
     },
 
-    toggleDrawer() {
+    toggleDrawer () {
       this.visibleDrawer = !this.visibleDrawer
-    },
-
-  },
+    }
+  }
 }
 </script>
 
