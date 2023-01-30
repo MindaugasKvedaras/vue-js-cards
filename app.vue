@@ -267,8 +267,8 @@ export default {
         this.configData = this.$uci.sections('card_task', 'interface')
         this.configData.forEach(config => {
           this.cardsData.forEach(card => {
-            card.title === config.name ? card.visible = JSON.parse(config.visible) : null
-            card.title === config.name ? card.order = JSON.parse(config.order) : null
+            card.title = config.name ? card.visible = JSON.parse(config.visible) : null
+            card.title = config.name ? card.order = JSON.parse(config.order) : null
           })
         })
       })
